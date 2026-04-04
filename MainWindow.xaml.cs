@@ -16,6 +16,7 @@ public partial class MainWindow : Window
 
     private const double OffsetStepMs = 5;
     private int _hitCount, _missCount;
+    private bool _isLoading = true;
 
     public MainWindow()
     {
@@ -101,7 +102,7 @@ public partial class MainWindow : Window
         BuildBindingButtons();
         LogBox.ItemsSource = _vm.Log;
         _vm.AddLog("Ready. Load a chart JSON and press Start.");
-        SaveConfig();
+        _isLoading = false;
     }
 
     protected override void OnClosed(EventArgs e)
@@ -113,6 +114,7 @@ public partial class MainWindow : Window
 
     private void SaveConfig()
     {
+        if (_isLoading) return;
         double.TryParse(OffsetBox?.Text, out double offset);
         float.TryParse(DevMinBox?.Text, out float devMin);
         float.TryParse(DevMaxBox?.Text, out float devMax);
