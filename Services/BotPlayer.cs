@@ -53,7 +53,7 @@ public class BotPlayer
     public int HoldMinMs { get; set; } = 0;
     public int HoldMaxMs { get; set; } = 0;
 
-    public bool PlayAsLeft { get; set; } = false;
+    public PlayerSide PlayerSide { get; set; } = PlayerSide.Right;
 
     public bool StartFromFirstNote { get; set; } = false;
 
@@ -91,10 +91,9 @@ public class BotPlayer
     {
         if (_chart is null) return;
 
-        int targetPlayer = PlayAsLeft ? 0 : 1;
-
         var notes = _chart.Notes
-            .Where(n => n.Player == targetPlayer && n.Lane < _bindings.Length)
+            .Where(n => (PlayerSide == PlayerSide.Both || n.Player == (PlayerSide == PlayerSide.Left ? 0 : 1))
+                        && n.Lane < _bindings.Length)
             .OrderBy(n => n.TimeMs)
             .ToList();
 

@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text.Json;
 using System.Windows.Input;
+using FNFBot.Models;
 
 namespace FNFBot.Services;
 
@@ -17,7 +18,7 @@ public class BotConfig
     public double MissPct { get; set; } = 0;
     public int HoldMinMs { get; set; } = 0;
     public int HoldMaxMs { get; set; } = 0;
-    public bool PlayAsLeft { get; set; } = false;
+    public PlayerSide PlayerSide { get; set; } = PlayerSide.Right;
     public bool StartFromFirstNote { get; set; } = false;
 }
 
