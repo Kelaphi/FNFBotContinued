@@ -26,22 +26,29 @@ public partial class MainWindow : Window
         _vm.Bindings = cfg.Bindings
             .Select((s, i) => ConfigService.ParseKey(s, MainViewModel.DefaultBindings[i]))
             .ToArray();
-        _vm.StartBind = ConfigService.ParseKey(cfg.StartBind, Key.F1);
+        _vm.StartBind          = ConfigService.ParseKey(cfg.StartBind,          Key.F1);
         _vm.OffsetIncreaseBind = ConfigService.ParseKey(cfg.OffsetIncreaseBind, Key.F2);
         _vm.OffsetDecreaseBind = ConfigService.ParseKey(cfg.OffsetDecreaseBind, Key.F3);
 
-        OffsetBox.Text = cfg.OffsetMs.ToString();
-        DevMinBox.Text = cfg.DevMinMs.ToString();
-        DevMaxBox.Text = cfg.DevMaxMs.ToString();
+        OffsetBox.Text  = cfg.OffsetMs.ToString();
+        DevMinBox.Text  = cfg.DevMinMs.ToString();
+        DevMaxBox.Text  = cfg.DevMaxMs.ToString();
         MissPctBox.Text = cfg.MissPct.ToString();
         HoldMinBox.Text = cfg.HoldMinMs.ToString();
         HoldMaxBox.Text = cfg.HoldMaxMs.ToString();
 
-        _bot.DevMinMs = cfg.DevMinMs;
-        _bot.DevMaxMs = cfg.DevMaxMs;
-        _bot.MissPct = cfg.MissPct;
+        if (cfg.PlayAsLeft) PlayerLeft.IsChecked = true;
+        else PlayerRight.IsChecked = true;
+
+        if (cfg.StartFromFirstNote) StartFromFirstNote.IsChecked = true;
+        else StartFromSong.IsChecked = true;
+
+        _bot.DevMinMs  = cfg.DevMinMs;
+        _bot.DevMaxMs  = cfg.DevMaxMs;
+        _bot.MissPct   = cfg.MissPct;
         _bot.HoldMinMs = cfg.HoldMinMs;
         _bot.HoldMaxMs = cfg.HoldMaxMs;
+        _bot.PlayAsLeft = cfg.PlayAsLeft;
 
         _bot.NoteHit += lane => Dispatcher.InvokeAsync(() =>
             _vm.AddLog($"Hit lane {MainViewModel.LaneNames[lane]}"));
@@ -54,7 +61,7 @@ public partial class MainWindow : Window
 
         _hook.OnKeyPressed += (_, vk) =>
         {
-            int startVk = KeyInterop.VirtualKeyFromKey(_vm.StartBind);
+            int startVk    = KeyInterop.VirtualKeyFromKey(_vm.StartBind);
             int increaseVk = KeyInterop.VirtualKeyFromKey(_vm.OffsetIncreaseBind);
             int decreaseVk = KeyInterop.VirtualKeyFromKey(_vm.OffsetDecreaseBind);
 
@@ -71,6 +78,7 @@ public partial class MainWindow : Window
                     {
                         val += OffsetStepMs;
                         OffsetBox.Text = val.ToString();
+                        _bot.OffsetMs = (float)val;
                         _vm.AddLog($"Offset → {val}ms");
                         SaveConfig();
                     }
@@ -82,6 +90,7 @@ public partial class MainWindow : Window
                     {
                         val -= OffsetStepMs;
                         OffsetBox.Text = val.ToString();
+                        _bot.OffsetMs = (float)val;
                         _vm.AddLog($"Offset → {val}ms");
                         SaveConfig();
                     }
@@ -103,36 +112,38 @@ public partial class MainWindow : Window
 
     private void SaveConfig()
     {
-        double.TryParse(OffsetBox?.Text, out double offset);
-        float.TryParse(DevMinBox?.Text, out float devMin);
-        float.TryParse(DevMaxBox?.Text, out float devMax);
+        double.TryParse(OffsetBox?.Text,  out double offset);
+        float.TryParse(DevMinBox?.Text,   out float devMin);
+        float.TryParse(DevMaxBox?.Text,   out float devMax);
         double.TryParse(MissPctBox?.Text, out double miss);
-        int.TryParse(HoldMinBox?.Text, out int holdMin);
-        int.TryParse(HoldMaxBox?.Text, out int holdMax);
+        int.TryParse(HoldMinBox?.Text,    out int holdMin);
+        int.TryParse(HoldMaxBox?.Text,    out int holdMax);
 
         ConfigService.Save(new BotConfig
         {
-            Bindings = _vm.Bindings.Select(k => k.ToString()).ToArray(),
-            StartBind = _vm.StartBind.ToString(),
+            Bindings           = _vm.Bindings.Select(k => k.ToString()).ToArray(),
+            StartBind          = _vm.StartBind.ToString(),
             OffsetIncreaseBind = _vm.OffsetIncreaseBind.ToString(),
             OffsetDecreaseBind = _vm.OffsetDecreaseBind.ToString(),
-            OffsetMs = offset,
-            DevMinMs = devMin,
-            DevMaxMs = devMax,
-            MissPct = miss,
-            HoldMinMs = holdMin,
-            HoldMaxMs = holdMax
+            OffsetMs           = offset,
+            DevMinMs           = devMin,
+            DevMaxMs           = devMax,
+            MissPct            = miss,
+            HoldMinMs          = holdMin,
+            HoldMaxMs          = holdMax,
+            PlayAsLeft         = PlayerLeft.IsChecked == true,
+            StartFromFirstNote = StartFromFirstNote.IsChecked == true
         });
     }
 
     private void Settings_Changed(object sender, TextChangedEventArgs e)
     {
         if (_bot == null) return;
-        if (float.TryParse(DevMinBox?.Text, out float dmin)) _bot.DevMinMs = dmin;
-        if (float.TryParse(DevMaxBox?.Text, out float dmax)) _bot.DevMaxMs = dmax;
-        if (double.TryParse(MissPctBox?.Text, out double m)) _bot.MissPct = m;
-        if (int.TryParse(HoldMinBox?.Text, out int mn)) _bot.HoldMinMs = mn;
-        if (int.TryParse(HoldMaxBox?.Text, out int mx)) _bot.HoldMaxMs = mx;
+        if (float.TryParse(DevMinBox?.Text,   out float dmin)) _bot.DevMinMs  = dmin;
+        if (float.TryParse(DevMaxBox?.Text,   out float dmax)) _bot.DevMaxMs  = dmax;
+        if (double.TryParse(MissPctBox?.Text, out double m))   _bot.MissPct   = m;
+        if (int.TryParse(HoldMinBox?.Text,    out int mn))     _bot.HoldMinMs = mn;
+        if (int.TryParse(HoldMaxBox?.Text,    out int mx))     _bot.HoldMaxMs = mx;
         SaveConfig();
     }
 
@@ -250,8 +261,8 @@ public partial class MainWindow : Window
 
     private void ResetBindings_Click(object sender, RoutedEventArgs e)
     {
-        _vm.Bindings = (Key[])MainViewModel.DefaultBindings.Clone();
-        _vm.StartBind = Key.F1;
+        _vm.Bindings           = (Key[])MainViewModel.DefaultBindings.Clone();
+        _vm.StartBind          = Key.F1;
         _vm.OffsetIncreaseBind = Key.F2;
         _vm.OffsetDecreaseBind = Key.F3;
         BuildBindingButtons();
@@ -296,11 +307,13 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (float.TryParse(DevMinBox.Text, out float dmin)) _bot.DevMinMs = dmin;
-        if (float.TryParse(DevMaxBox.Text, out float dmax)) _bot.DevMaxMs = dmax;
-        if (double.TryParse(MissPctBox.Text, out double m)) _bot.MissPct = m;
-        if (int.TryParse(HoldMinBox.Text, out int mn)) _bot.HoldMinMs = mn;
-        if (int.TryParse(HoldMaxBox.Text, out int mx)) _bot.HoldMaxMs = mx;
+        if (float.TryParse(DevMinBox.Text,   out float dmin)) _bot.DevMinMs  = dmin;
+        if (float.TryParse(DevMaxBox.Text,   out float dmax)) _bot.DevMaxMs  = dmax;
+        if (double.TryParse(MissPctBox.Text, out double m))   _bot.MissPct   = m;
+        if (int.TryParse(HoldMinBox.Text,    out int mn))     _bot.HoldMinMs = mn;
+        if (int.TryParse(HoldMaxBox.Text,    out int mx))     _bot.HoldMaxMs = mx;
+        _bot.PlayAsLeft = PlayerLeft.IsChecked == true;
+        _bot.StartFromFirstNote = StartFromFirstNote.IsChecked == true;
 
         _hitCount = _missCount = 0;
         HitCount.Text = MissCount.Text = "0";
