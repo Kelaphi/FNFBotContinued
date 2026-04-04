@@ -17,6 +17,8 @@ public class BotConfig
     public double MissPct { get; set; } = 0;
     public int HoldMinMs { get; set; } = 0;
     public int HoldMaxMs { get; set; } = 0;
+    public bool PlayAsLeft { get; set; } = false;
+    public bool StartFromFirstNote { get; set; } = false;
 }
 
 public static class ConfigService
