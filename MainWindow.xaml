@@ -1,7 +1,7 @@
 <Window x:Class="FNFBot.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="FNFBot 2.5" SizeToContent="WidthAndHeight"
+        Title="FNFBot 2.6" SizeToContent="WidthAndHeight"
         Icon="Resources/FNFBotIcon.ico"
         Background="#1d205d" Foreground="White"
         FontFamily="Consolas" ResizeMode="CanMinimize">
