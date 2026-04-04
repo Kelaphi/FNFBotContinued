@@ -11,10 +11,69 @@ public static class ChartLoader
         var text = File.ReadAllText(path);
         var root = JObject.Parse(text);
 
+        if (root["format"]?.ToString() == "psych_v1")
+            return ParsePsychV1Format(root);
+
         if (root["song"] is JObject songObj)
             return ParseFnfFormat(songObj);
 
         return ParseSimpleFormat(root);
+    }
+
+    private static Chart ParsePsychV1Format(JObject root)
+    {
+        var chart = new Chart
+        {
+            SongName = root["song"]?.ToString() ?? "Unknown",
+            Bpm = root["bpm"]?.Value<double>() ?? 120,
+            Speed = root["speed"]?.Value<double>() ?? 1.0
+        };
+
+        double bpm = chart.Bpm;
+        double stepCrochet = StepCrochet(bpm);
+        double currentMs = 0;
+
+        var sections = root["notes"] as JArray ?? new JArray();
+
+        foreach (var section in sections)
+        {
+            bool changeBpm = section["changeBPM"]?.Value<bool>() ?? false;
+            double sectionBpm = section["bpm"]?.Value<double>() ?? 0;
+            if (changeBpm && sectionBpm > 0)
+            {
+                bpm = sectionBpm;
+                stepCrochet = StepCrochet(bpm);
+            }
+
+            bool mustHitSection = section["mustHitSection"]?.Value<bool>() ?? true;
+            var sectionNotes = section["sectionNotes"] as JArray ?? new JArray();
+            int sectionBeats = section["sectionBeats"]?.Value<int>() ?? 4;
+
+            foreach (var n in sectionNotes)
+            {
+                double rawTime = n[0]?.Value<double>() ?? 0;
+                int rawLane = n[1]?.Value<int>() ?? 0;
+                double dur = n[2]?.Value<double>() ?? 0;
+
+                double noteTimeMs = rawTime > 0 ? rawTime : currentMs;
+
+                int player = rawLane < 4 ? 1 : 0;
+                int lane = rawLane < 4 ? rawLane : rawLane - 4;
+
+                chart.Notes.Add(new Note
+                {
+                    TimeMs = noteTimeMs,
+                    Lane = lane,
+                    Duration = dur,
+                    Player = player
+                });
+            }
+
+            currentMs += StepCrochet(bpm) * 4 * sectionBeats;
+        }
+
+        chart.Notes.Sort((a, b) => a.TimeMs.CompareTo(b.TimeMs));
+        return chart;
     }
 
     private static Chart ParseFnfFormat(JObject song)
@@ -22,58 +81,55 @@ public static class ChartLoader
         var chart = new Chart
         {
             SongName = song["song"]?.ToString() ?? "Unknown",
-            Bpm      = song["bpm"]?.Value<double>() ?? 120,
-            Speed    = song["speed"]?.Value<double>() ?? 1.0
+            Bpm = song["bpm"]?.Value<double>() ?? 120,
+            Speed = song["speed"]?.Value<double>() ?? 1.0
         };
 
-        double bpm         = chart.Bpm;
+        double bpm = chart.Bpm;
         double stepCrochet = StepCrochet(bpm);
-
         double currentMs = 0;
 
         var sections = song["notes"] as JArray ?? new JArray();
 
         foreach (var section in sections)
         {
-            bool   changeBpm  = section["changeBPM"]?.Value<bool>()   ?? false;
-            double sectionBpm = section["bpm"]?.Value<double>()        ?? 0;
+            bool changeBpm = section["changeBPM"]?.Value<bool>() ?? false;
+            double sectionBpm = section["bpm"]?.Value<double>() ?? 0;
             if (changeBpm && sectionBpm > 0)
             {
-                bpm        = sectionBpm;
+                bpm = sectionBpm;
                 stepCrochet = StepCrochet(bpm);
             }
 
             bool mustHitSection = section["mustHitSection"]?.Value<bool>() ?? true;
-            var  sectionNotes   = section["sectionNotes"] as JArray ?? new JArray();
+            var sectionNotes = section["sectionNotes"] as JArray ?? new JArray();
 
             foreach (var n in sectionNotes)
             {
                 double rawTime = n[0]?.Value<double>() ?? 0;
-                int    rawLane = n[1]?.Value<int>()    ?? 0;
-                double dur     = n[2]?.Value<double>() ?? 0;
+                int rawLane = n[1]?.Value<int>() ?? 0;
+                double dur = n[2]?.Value<double>() ?? 0;
 
                 double noteTimeMs = rawTime > 0 ? rawTime : currentMs;
 
-                int player;
-                int lane;
-
+                int player, lane;
                 if (rawLane < 4)
                 {
                     player = mustHitSection ? 1 : 0;
-                    lane   = rawLane;
+                    lane = rawLane;
                 }
                 else
                 {
                     player = mustHitSection ? 0 : 1;
-                    lane   = rawLane - 4;
+                    lane = rawLane - 4;
                 }
 
                 chart.Notes.Add(new Note
                 {
-                    TimeMs   = noteTimeMs,
-                    Lane     = lane,
+                    TimeMs = noteTimeMs,
+                    Lane = lane,
                     Duration = dur,
-                    Player   = player
+                    Player = player
                 });
             }
 
@@ -91,8 +147,8 @@ public static class ChartLoader
         var chart = new Chart
         {
             SongName = root["songName"]?.ToString() ?? "Unknown",
-            Bpm      = root["bpm"]?.Value<double>() ?? 120,
-            Speed    = root["speed"]?.Value<double>() ?? 1.0
+            Bpm = root["bpm"]?.Value<double>() ?? 120,
+            Speed = root["speed"]?.Value<double>() ?? 1.0
         };
 
         var notes = root["notes"] as JArray ?? new JArray();
@@ -100,10 +156,10 @@ public static class ChartLoader
         {
             chart.Notes.Add(new Note
             {
-                TimeMs   = n["time"]?.Value<double>()     ?? 0,
-                Lane     = n["lane"]?.Value<int>()        ?? 0,
+                TimeMs = n["time"]?.Value<double>() ?? 0,
+                Lane = n["lane"]?.Value<int>() ?? 0,
                 Duration = n["duration"]?.Value<double>() ?? 0,
-                Player   = n["player"]?.Value<int>()      ?? 1
+                Player = n["player"]?.Value<int>() ?? 1
             });
         }
 
