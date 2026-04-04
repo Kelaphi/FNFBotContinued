@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using FNFBot.Models;
 using FNFBot.Services;
 using FNFBot.ViewModels;
 using Microsoft.Win32;
@@ -38,7 +39,8 @@ public partial class MainWindow : Window
         HoldMinBox.Text = cfg.HoldMinMs.ToString();
         HoldMaxBox.Text = cfg.HoldMaxMs.ToString();
 
-        if (cfg.PlayAsLeft) PlayerLeft.IsChecked = true;
+        if (cfg.PlayerSide == PlayerSide.Left) PlayerLeft.IsChecked = true;
+        else if (cfg.PlayerSide == PlayerSide.Both) PlayerBoth.IsChecked = true;
         else PlayerRight.IsChecked = true;
 
         if (cfg.StartFromFirstNote) StartFromFirstNote.IsChecked = true;
@@ -49,7 +51,7 @@ public partial class MainWindow : Window
         _bot.MissPct = cfg.MissPct;
         _bot.HoldMinMs = cfg.HoldMinMs;
         _bot.HoldMaxMs = cfg.HoldMaxMs;
-        _bot.PlayAsLeft = cfg.PlayAsLeft;
+        _bot.PlayerSide = cfg.PlayerSide;
 
         _bot.NoteHit += lane => Dispatcher.InvokeAsync(() =>
             _vm.AddLog($"Hit lane {MainViewModel.LaneNames[lane]}"));
@@ -134,7 +136,9 @@ public partial class MainWindow : Window
             MissPct = miss,
             HoldMinMs = holdMin,
             HoldMaxMs = holdMax,
-            PlayAsLeft = PlayerLeft.IsChecked == true,
+            PlayerSide = PlayerLeft.IsChecked == true ? PlayerSide.Left
+                       : PlayerBoth.IsChecked == true ? PlayerSide.Both
+                       : PlayerSide.Right,
             StartFromFirstNote = StartFromFirstNote.IsChecked == true
         });
     }
@@ -315,7 +319,9 @@ public partial class MainWindow : Window
         if (double.TryParse(MissPctBox.Text, out double m)) _bot.MissPct = m;
         if (int.TryParse(HoldMinBox.Text, out int mn)) _bot.HoldMinMs = mn;
         if (int.TryParse(HoldMaxBox.Text, out int mx)) _bot.HoldMaxMs = mx;
-        _bot.PlayAsLeft = PlayerLeft.IsChecked == true;
+        _bot.PlayerSide = PlayerLeft.IsChecked == true ? PlayerSide.Left
+                        : PlayerBoth.IsChecked == true ? PlayerSide.Both
+                        : PlayerSide.Right;
         _bot.StartFromFirstNote = StartFromFirstNote.IsChecked == true;
 
         _hitCount = _missCount = 0;

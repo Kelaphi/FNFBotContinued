@@ -139,6 +139,9 @@
                                  Margin="0,0,16,0" VerticalAlignment="Center"/>
                     <RadioButton x:Name="PlayerLeft" Content="Left (Opponent)"
                                  Foreground="#ccccee"
+                                 Margin="0,0,16,0" VerticalAlignment="Center"/>
+                    <RadioButton x:Name="PlayerBoth" Content="Both"
+                                 Foreground="#ccccee"
                                  VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
