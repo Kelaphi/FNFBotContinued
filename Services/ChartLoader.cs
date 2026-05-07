@@ -20,6 +20,17 @@ public static class ChartLoader
         return ParseSimpleFormat(root);
     }
 
+    /// <summary>
+    /// Returns true only for real notes. Event entries (e.g. "Cam Boom Speed")
+    /// embed a string in slot [2] instead of a numeric duration — skip those.
+    /// </summary>
+    private static bool IsRealNote(JToken n)
+    {
+        if (n.Count() < 3) return false;
+        var durToken = n[2];
+        return durToken?.Type != JTokenType.String;
+    }
+
     private static Chart ParsePsychV1Format(JObject root)
     {
         var chart = new Chart
@@ -51,6 +62,8 @@ public static class ChartLoader
 
             foreach (var n in sectionNotes)
             {
+                if (!IsRealNote(n)) continue; // skip camera events and other non-note entries
+
                 double rawTime = n[0]?.Value<double>() ?? 0;
                 int rawLane = n[1]?.Value<int>() ?? 0;
                 double dur = n[2]?.Value<double>() ?? 0;
@@ -106,6 +119,8 @@ public static class ChartLoader
 
             foreach (var n in sectionNotes)
             {
+                if (!IsRealNote(n)) continue; // skip camera events and other non-note entries
+
                 double rawTime = n[0]?.Value<double>() ?? 0;
                 int rawLane = n[1]?.Value<int>() ?? 0;
                 double dur = n[2]?.Value<double>() ?? 0;
